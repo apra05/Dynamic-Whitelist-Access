@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract DynamicWhitelist {
+    mapping(address => bool) public whitelisted;
+    uint256 public immutable closingTime;
+
+    // Set closing time (e.g., 7 days from deployment)
+    uint256 private constant DURATION = 7 days;
+
+    // Deploys with a fixed closing time (block.timestamp + DURATION)
+    bytes32 private _dummy; // Avoids constructor use
+    function init() external {
+        require(closingTime == 0, "Already initialized");
+        assembly {
+            sstore(closingTime.slot, add(timestamp(), DURATION))
+        }
+    }
+
+    // Add users dynamically before the deadline
+    function addToWhitelist(address user) external {
+        require(block.timestamp < closingTime, "Whitelist is closed");
+        whitelisted[user] = true;
+    }
+
+    // Check if an address is whitelisted
+    function isWhitelisted(address user) external view returns (bool) {
+        return whitelisted[user];
+    }
+}
